@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>Arturs Geschenkeliste</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            margin-block: 0;
+        }
+
+        body {
+            display: grid;
+            grid-template:
+            "header" auto
+            "main" 1fr
+            "footer" auto
+            / 1fr;
+            max-height: 100dvh;
+            gap: 2rem;
+        }
+
+        header, footer {
+            text-align: center;
+            padding: 1rem 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        main {
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            padding: 3rem;
+            gap: 1rem;
+        }
+
+        .card {
+            max-width: min(100dvw, 500px);
+            display: grid;
+            justify-items: center;
+            border: 1px solid #00000075;
+            background-color: #00000015;
+            border-radius: 5px;
+            box-shadow: 5px 5px 5px #00000030;
+            gap: 1rem;
+            padding: 1rem;
+            width: 100%;
+            grid-template:
+                "img header" auto
+                "img comment" 1fr
+                "img link" auto
+                / 1fr 2fr;
+
+            picture {
+                grid-area: img;
+                background-color: #fff;
+                border: 1px solid #00000035;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                padding: 0.5rem;
+            }
+
+            img {
+                max-width: 100%;
+            }
+
+            header {
+                grid-area: header;
+                padding: 0;
+                font-size: 1.2rem;
+                font-weight: bold;
+            }
+
+            p:not(:empty) {
+                grid-area: comment;
+                font-style: italic;
+                background-color: #00000005;
+                border: 1px solid #00000035;
+                border-radius: 5px;
+                padding: 0.5rem;
+                width: 80%;
+                max-width: 80%;
+            }
+
+            a {
+                grid-area: link;
+                justify-self: end;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+<header><h1>&#127873; Arturs Geschenkeliste &#127873;</h1></header>
+<main>
+    <template id="card_template">
+        <article class="card">
+
+            <header></header>
+            <picture>
+                <img src="" alt="productimage"/>
+            </picture>
+            <p></p>
+            <a href="" rel="external"></a>
+        </article>
+    </template>
+</main>
+<footer>© Stefan Temme 2025</footer>
+
+<script>
+    const data = `https://www.bresser.de/p/diemaus-walkie-talkies-9810400;DieMaus Walkie-Talkies | 9810400;9810400_M_01_v0324.jpg;;false
+https://amzn.eu/d/8DAPTrH;Handy-Mikroskop für Kinder;71-so8RjgzL._AC_SL1500_.jpg;hmm...;false
+https://www.thalia.de/shop/home/artikeldetails/A1063874117;KOSMOS - Vorschul-Labor;kosmos-vorschul-labor.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1047984856;Ravensburger - Die Logik-Piraten;ravensburger-die-logik-piraten.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1050251871;LEGO® Kettenreaktionen: Baue dir 10 bewegliche Maschinen;lego-kettenreaktionen-baue-dir-10-bewegliche-maschinen-taschenbuch-pat-murphy.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1050251883;LEGO® Geniale Maschinen: Mit 11 Modellen;lego-geniale-maschinen-mit-11-modellen-taschenbuch-panini.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1069663863;LEGO NINJAGO 71806 Coles Erdmech, Action-Spielzeug mit Mech-Actionfigur;lego-ninjago-71806-coles-erdmech-action-spielzeug-mit-mech-actionfigur.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1071215063;LEGO NINJAGO Turnier-Arena, Abenteuer-Spielzeug mit 6 Minifiguren 71818;lego-ninjago-turnier-arena-abenteuer-spielzeug-mit-6-minifiguren-71818.webp;;false
+https://www.thalia.de/shop/home/artikeldetails/A1052813261;KOSMOS - FunScience - Nachtleuchtende Flummi-Power;kosmos-funscience-nachtleuchtende-flummi-power.jpeg;;false
+https://www.smythstoys.com/de/de-de/spielzeug/rollenspiele-und-verkleiden/kostueme-und-zubehoer/kostueme/kostuemset-polizei/p/240222;Kostümset Polizei;240222.jpg;;false
+;Tauchringe;6139f-PNaVL._AC_SL1250_.jpg;;false
+;Grünflügel Schwimmgürtel;0121_1200x1200.webp;;false`.split("\n").map(r => {
+        const [url, description, image, comment, gekauft] = r.split(";");
+        return {url, description, image, comment, gekauft: gekauft.toLowerCase() == "true"}
+    });
+    const main = document.querySelector("main");
+    const template = document.querySelector("#card_template");
+    main.append(...data.map(({url, description, image, comment, gekauft}) => {
+        const node = template.content.cloneNode(true);
+        if (gekauft) {
+            node.classList.add("bought");
+        }
+        const header = node.querySelector("header");
+        header.innerText = description;
+
+        const p = node.querySelector("p")
+        p.innerText = comment
+        const img = node.querySelector("img");
+        img.src = "img/" + image;
+        const a = node.querySelector("a");
+        if (url) {
+            a.href = url;
+            a.innerText = description;
+        } else {
+
+        }
+        return node;
+    }));
+
+    console.log(data);
+</script>
+
+</body>
+</html>
