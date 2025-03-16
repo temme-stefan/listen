@@ -105,12 +105,10 @@
             p:not(:empty) {
                 grid-area: comment;
                 font-style: italic;
-                background-color: #00000005;
-                border: 1px solid #00000035;
+                background-color: #00000015;
+                /*border: 1px solid #00000035;*/
                 border-radius: 5px;
                 padding: 0.5rem;
-                width: 80%;
-                max-width: 80%;
             }
 
             a {
@@ -120,6 +118,24 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 max-width: 80%;
+            }
+            &.bought{
+                border-color: darkgreen;
+                position: relative;
+                &:after{
+                    position: absolute;
+                    top:0;
+                    bottom:0;
+                    left:0;
+                    right:0;
+                    background-color: #00800050;
+                    pointer-events: none;
+                    content:"✅";
+                    font-size:4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
             }
         }
     </style>
@@ -143,7 +159,7 @@
 </template>
 <script>
     const data = `1;https://www.bresser.de/p/diemaus-walkie-talkies-9810400;DieMaus Walkie-Talkies | 9810400;9810400_M_01_v0324.jpg;;false
-2;https://amzn.eu/d/8DAPTrH;Handy-Mikroskop für Kinder;71-so8RjgzL._AC_SL1500_.jpg;hmm...;false
+2;https://amzn.eu/d/8DAPTrH;Handy-Mikroskop für Kinder;71-so8RjgzL._AC_SL1500_.jpg;Unsicher, ob Artur das mag;false
 3;https://www.thalia.de/shop/home/artikeldetails/A1063874117;KOSMOS - Vorschul-Labor;kosmos-vorschul-labor.webp;;false
 4;https://www.thalia.de/shop/home/artikeldetails/A1047984856;Ravensburger - Die Logik-Piraten;ravensburger-die-logik-piraten.webp;;false
 5;https://www.thalia.de/shop/home/artikeldetails/A1050251871;LEGO® Kettenreaktionen: Baue dir 10 bewegliche Maschinen;lego-kettenreaktionen-baue-dir-10-bewegliche-maschinen-taschenbuch-pat-murphy.webp;;false
@@ -176,7 +192,7 @@
     main.append(...data.map(({url, description, image, comment, gekauft}) => {
         const node = template.content.cloneNode(true);
         if (gekauft) {
-            node.classList.add("bought");
+            node.querySelector("article").classList.add("bought");
         }
         const header = node.querySelector("header");
         header.innerText = description;
