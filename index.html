@@ -29,10 +29,11 @@
             text-align: center;
             padding-block-start: 1rem;
             padding-inline: 0.5rem;
-            @media (min-width: 800px){
+            @media (min-width: 800px) {
                 padding-block-start: 3rem;
             }
         }
+
         footer {
             text-align: center;
             padding-block: 0.5rem;
@@ -42,7 +43,7 @@
         h1 {
             font-size: 1.4rem;
             font-weight: bold;
-            @media (min-width: 800px){
+            @media (min-width: 800px) {
                 font-size: 2rem;
             }
         }
@@ -55,7 +56,7 @@
             flex-wrap: wrap;
             padding: 1rem 0.5rem;
             gap: 1rem;
-            @media (min-width: 800px){
+            @media (min-width: 800px) {
                 padding: 3rem;
             }
         }
@@ -76,6 +77,7 @@
                 "img comment" 1fr
                 "img link" auto
                 / 1fr 2fr;
+            position: relative;
 
             picture {
                 grid-area: img;
@@ -85,6 +87,8 @@
                 display: flex;
                 align-items: center;
                 padding: 0.5rem;
+                transition: all 1s ease-out;
+                width: 100%;
             }
 
             img {
@@ -157,9 +161,16 @@
 17;https://www.thalia.de/shop/home/artikeldetails/A1069663564;LEGO City 60404 Burger-Truck, Set mit Spielzeug-Auto für Kinder ab 5 Jahren;lego-city-60404-burger-truck-set-mit-spielzeug-auto-fuer-kinder-ab-5-jahren.webp;;false
 18;https://www.thalia.de/shop/home/artikeldetails/A1069663672;LEGO City 60406 Autotransporter mit Rennwagen, Set mit 2 Spielzeug-Autos;lego-city-60406-autotransporter-mit-rennwagen-set-mit-2-spielzeug-autos.webp;;false`
         .split("\n").map(r => {
-        const [sort, url, description, image, comment, gekauft] = r.split(";");
-        return {sort: Number.parseInt(sort), url, description, image, comment, gekauft: gekauft.toLowerCase() == "true"}
-    }).sort((a, b) => Math.sign(a.sort - b.sort));
+            const [sort, url, description, image, comment, gekauft] = r.split(";");
+            return {
+                sort: Number.parseInt(sort),
+                url,
+                description,
+                image,
+                comment,
+                gekauft: gekauft.toLowerCase() === "true"
+            }
+        }).sort((a, b) => Math.sign(a.sort - b.sort));
     const main = document.querySelector("main");
     const template = document.querySelector("#card_template");
     main.append(...data.map(({url, description, image, comment, gekauft}) => {
@@ -177,7 +188,7 @@
         const a = node.querySelector("a");
         if (url) {
             a.href = url;
-            a.innerText = description;
+            a.innerText = url;
         } else {
         }
         return node;
