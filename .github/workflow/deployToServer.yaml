@@ -1,0 +1,24 @@
+name: DeployToServer
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOYKEY }}
+          SSH_SERVER: ${{ secrets.SERVERNAME }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_github
+          chmod 600 ~/.ssh/id_github
+          echo -e "Host *\n  IdentityFile ~/.ssh/id_github\n" > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+          ssh-keyscan -H "$SSH_SERVER" >> ~/.ssh/known_hosts
+      - name: deploy
+        run: cd "$GITHUB_WORKSPACE"; ./deploy.sh
