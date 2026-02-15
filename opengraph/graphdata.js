@@ -70,6 +70,32 @@ function getDefaultCardData() {
     };
 }
 
+const updateCardFromUrl = async (cardData) => {
+    const response = await fetch(`proxy.php?url=${encodeURIComponent(cardData.url)}`);
+    const data = await response.json();
+    if (data.success && data.metadata) {
+        // Erfolgreich Metadaten geladen
+        cardData.title = data.metadata.og.title || data.metadata.title || cardData.title;
+        cardData.image = data.metadata.og.image || cardData.image;
+
+        // Lade Bild als Blob
+        if (cardData.image) {
+            try {
+                cardData.imageBlob = await downloadImageAsBlob(cardData.image);
+                if (cardData.imageBlob) {
+                    cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
+                }
+            } catch (e) {
+                console.warn('Bild konnte nicht geladen werden:', e);
+            }
+        }
+
+        showMessage('Metadaten erfolgreich geladen!', 'success');
+    } else {
+        showMessage(`Metadaten konnten nicht geladen werden: ${data.error || 'Unbekannter Fehler'}. Bitte manuell ausfüllen.`, 'error');
+    }
+}
+
 async function addCardFromUrl() {
     const url = urlInput.value.trim();
 
@@ -87,50 +113,17 @@ async function addCardFromUrl() {
     }
 
     showMessage('Lade Metadaten...', 'loading');
-
+    const cardData = getDefaultCardData();
+    cardData.url = url;
     try {
-        const response = await fetch(`proxy.php?url=${encodeURIComponent(url)}`);
-        const data = await response.json();
-
-        const cardData = getDefaultCardData();
-        cardData.url = url;
-
-        if (data.success && data.metadata) {
-            // Erfolgreich Metadaten geladen
-            cardData.title = data.metadata.og.title || data.metadata.title || '';
-            cardData.image = data.metadata.og.image || '';
-
-            // Lade Bild als Blob
-            if (cardData.image) {
-                try {
-                    cardData.imageBlob = await downloadImageAsBlob(cardData.image);
-                    if (cardData.imageBlob) {
-                        cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
-                    }
-                } catch (e) {
-                    console.warn('Bild konnte nicht geladen werden:', e);
-                }
-            }
-
-            showMessage('Metadaten erfolgreich geladen!', 'success');
-        } else {
-            // Fehlerfall: Nur URL befüllen
-            showMessage(`Metadaten konnten nicht geladen werden: ${data.error || 'Unbekannter Fehler'}. Bitte manuell ausfüllen.`, 'error');
-        }
-
+        await updateCardFromUrl(cardData);
+    } catch (error) {
+        showMessage(`Fehler: ${error.message}`, 'error');
+    }
+    finally {
         addCard(cardData);
         urlInput.value = '';
         urlInput.focus();
-
-    } catch (error) {
-        showMessage(`Fehler: ${error.message}`, 'error');
-
-        // Erstelle Karte trotzdem mit nur URL
-        const cardData = getDefaultCardData();
-        cardData.url = url;
-        addCard(cardData);
-
-        urlInput.value = '';
     }
 }
 
@@ -349,27 +342,12 @@ function addCard(cardData) {
         showMessage('Aktualisiere Metadaten...', 'loading');
 
         try {
-            const response = await fetch(`proxy.php?url=${encodeURIComponent(cardData.url)}`);
-            const data = await response.json();
-
-            if (data.success && data.metadata) {
-                cardData.title = data.metadata.og.title || data.metadata.title || cardData.title;
-                cardData.image = data.metadata.og.image || cardData.image;
-
-                if (cardData.image) {
-                    cardData.imageBlob = await downloadImageAsBlob(cardData.image);
-                    if (cardData.imageBlob) {
-                        cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
-                    }
-                }
-
-                updateCardUI(cardData);
-                showMessage('Metadaten erfolgreich aktualisiert!', 'success');
-            } else {
-                showMessage('Aktualisierung fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'), 'error');
-            }
+            await updateCardFromUrl(cardData);
         } catch (error) {
             showMessage('Fehler beim Aktualisieren: ' + error.message, 'error');
+        }
+        finally {
+            updateCardUI(cardData);
         }
     });
 
