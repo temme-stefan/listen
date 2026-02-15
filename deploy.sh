@@ -18,7 +18,9 @@ deploy() {
     local TITLE=$3
     
     echo "Starte Deployment für $SOURCE_DIR nach $TARGET_DIR"
-    
+    # Lösche vorhandenes Build-Verzeichnis
+    rm -rf "$SOURCE_DIR/build"
+
     # Erstelle Build-Verzeichnis und Build-Image-Verzeichnis
     mkdir -p "$SOURCE_DIR/build"
     mkdir -p "$SOURCE_DIR/build/img"
@@ -60,5 +62,5 @@ deploy() {
 }
 
 # Führe Deployments nacheinander aus
-deploy "artur" "artur2026" "Arturs Geburtstagsliste"
-deploy "robin" "robin2026" "Robins Geburtstagsliste"
+deploy "artur" "artur2025" "Arturs Geburtstagsliste"
+deploy "robin" "robin2025" "Robins Geburtstagsliste"
