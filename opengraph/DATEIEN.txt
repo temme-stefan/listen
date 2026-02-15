@@ -7,6 +7,7 @@ index.html          - Hauptanwendung (UI mit Kartensystem)
 style.css           - Stylesheet (ausgelagertes CSS)
 graphdata.js        - JavaScript-Logik (Verwaltung, Import, Export, Sortierung)
 proxy.php           - PHP-Proxy für Metadaten-Abruf (CORS-safe)
+imageProxy.php      - PHP-Proxy für Bilder (CORS-safe, Cache 24h)
 
 📚 DOKUMENTATION
 ---------------
