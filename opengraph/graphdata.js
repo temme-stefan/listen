@@ -251,32 +251,26 @@ function getProxiedImageUrl(imageUrl) {
 }
 
 function addCard(cardData) {
-    // Entferne empty state
-    const emptyState = container.querySelector('.empty-state');
-    if (emptyState) emptyState.remove();
+    // Entferne empty state falls vorhanden
+    container.querySelector('.empty-state')?.remove();
 
     // Erstelle Karte aus Template
     const cardElement = template.content.cloneNode(true);
     const article = cardElement.querySelector('.card');
     article.dataset.id = cardData.id;
 
-    // Setze Werte
+    // DOM-Elemente (mehrfach genutzt)
     const titleInput = cardElement.querySelector('.card-title');
     const urlInput = cardElement.querySelector('.card-url-input');
     const commentInput = cardElement.querySelector('.card-comment-input');
-    const boughtCheckbox = cardElement.querySelector('.card-bought-checkbox');
     const img = cardElement.querySelector('.card-image img');
-    const deleteBtn = cardElement.querySelector('.delete-btn');
-    const imageUploadInput = cardElement.querySelector('.card-image-upload');
-    const imageBtn = cardElement.querySelector('.card-image-btn');
     const refreshBtn = cardElement.querySelector('.card-refresh-btn');
-    const moveUpBtn = cardElement.querySelector('.card-move-up-btn');
-    const moveDownBtn = cardElement.querySelector('.card-move-down-btn');
 
+    // Setze initiale Werte
     titleInput.value = cardData.title;
     urlInput.value = cardData.url;
     commentInput.value = cardData.comment;
-    boughtCheckbox.checked = cardData.bought;
+    cardElement.querySelector('.card-bought-checkbox').checked = cardData.bought;
 
     // Setze bought-item CSS-Klasse wenn bereits gekauft
     if (cardData.bought) {
@@ -288,12 +282,11 @@ function addCard(cardData) {
         refreshBtn.style.display = 'inline-block';
     }
 
+    // Setze Bild falls vorhanden
     if (cardData.image) {
-        if (cardData.imageBlob) {
-            img.src = URL.createObjectURL(cardData.imageBlob);
-        } else {
-            img.src = getProxiedImageUrl(cardData.image);
-        }
+        img.src = cardData.imageBlob
+            ? URL.createObjectURL(cardData.imageBlob)
+            : getProxiedImageUrl(cardData.image);
     }
 
     // Event Listeners
@@ -303,49 +296,38 @@ function addCard(cardData) {
 
     urlInput.addEventListener('input', (e) => {
         cardData.url = e.target.value;
-        // Zeige/Verstecke Refresh-Button
-        if (e.target.value.trim()) {
-            refreshBtn.style.display = 'inline-block';
-        } else {
-            refreshBtn.style.display = 'none';
-        }
+        refreshBtn.style.display = e.target.value.trim() ? 'inline-block' : 'none';
     });
 
     commentInput.addEventListener('input', (e) => {
         cardData.comment = e.target.value;
     });
 
-    boughtCheckbox.addEventListener('change', (e) => {
+    cardElement.querySelector('.card-bought-checkbox').addEventListener('change', (e) => {
         cardData.bought = e.target.checked;
-        if (e.target.checked) {
-            article.classList.add('bought-item');
-        } else {
-            article.classList.remove('bought-item');
-        }
+        article.classList.toggle('bought-item', e.target.checked);
     });
 
     // Bild-Upload
-    imageBtn.addEventListener('click', () => {
+    const imageUploadInput = cardElement.querySelector('.card-image-upload');
+    cardElement.querySelector('.card-image-btn').addEventListener('click', () => {
         imageUploadInput.click();
     });
 
     imageUploadInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            // Speichere Blob
             cardData.imageBlob = file;
-
-            // Zeige Vorschau
             const reader = new FileReader();
             reader.onload = (e) => {
                 img.src = e.target.result;
-                cardData.image = file.name; // Dateiname merken
+                cardData.image = file.name;
             };
             reader.readAsDataURL(file);
         }
     });
 
-    deleteBtn.addEventListener('click', () => {
+    cardElement.querySelector('.delete-btn').addEventListener('click', () => {
         deleteCard(cardData.id);
     });
 
@@ -360,21 +342,15 @@ function addCard(cardData) {
             const data = await response.json();
 
             if (data.success && data.metadata) {
-                // Aktualisiere Daten
                 cardData.title = data.metadata.og.title || data.metadata.title || cardData.title;
                 cardData.image = data.metadata.og.image || cardData.image;
-
-                // Aktualisiere UI
                 titleInput.value = cardData.title;
 
-                // Lade neues Bild
                 if (cardData.image) {
                     cardData.imageBlob = await downloadImageAsBlob(cardData.image);
-                    if (cardData.imageBlob) {
-                        img.src = URL.createObjectURL(cardData.imageBlob);
-                    } else {
-                        img.src = getProxiedImageUrl(cardData.image);
-                    }
+                    img.src = cardData.imageBlob
+                        ? URL.createObjectURL(cardData.imageBlob)
+                        : getProxiedImageUrl(cardData.image);
                 }
 
                 showMessage('Metadaten erfolgreich aktualisiert!', 'success');
@@ -387,11 +363,11 @@ function addCard(cardData) {
     });
 
     // Sortier-Buttons
-    moveUpBtn.addEventListener('click', () => {
+    cardElement.querySelector('.card-move-up-btn').addEventListener('click', () => {
         moveCard(cardData.id, 'up');
     });
 
-    moveDownBtn.addEventListener('click', () => {
+    cardElement.querySelector('.card-move-down-btn').addEventListener('click', () => {
         moveCard(cardData.id, 'down');
     });
 
@@ -400,10 +376,9 @@ function addCard(cardData) {
     cards.push(cardData);
 
     // Fokusiere Bemerkung
-    setTimeout(() => {
-        commentInput.focus();
-    }, 100);
+    setTimeout(() => commentInput.focus(), 100);
 }
+
 
 function deleteCard(id) {
     const cardIndex = cards.findIndex(c => c.id === id);
@@ -568,12 +543,10 @@ async function exportImages() {
     try {
         // Dynamisch JSZip laden (oder inline einbinden)
         if (typeof JSZip === 'undefined') {
-            // Erstelle ZIP manuell oder lade JSZip
             await loadJSZip();
         }
 
         const zip = new JSZip();
-        const imgFolder = zip.folder('img');
 
         for (let i = 0; i < cards.length; i++) {
             const card = cards[i];
@@ -595,7 +568,7 @@ async function exportImages() {
                 }
 
                 if (blob && blob.size > 0) {
-                    imgFolder.file(filename, blob);
+                    zip.file(filename, blob);
                     console.log(`✓ Bild hinzugefügt: ${filename} (${blob.size} bytes)`);
                 } else {
                     console.warn(`✗ Bild konnte nicht geladen werden: ${card.image}`);
@@ -611,7 +584,7 @@ async function exportImages() {
         // Download ZIP
         const link = document.createElement('a');
         link.href = URL.createObjectURL(zipBlob);
-        link.download = 'images.zip';
+        link.download = 'img.zip';
         link.click();
 
         showMessage('Bilder erfolgreich exportiert!', 'success');
@@ -634,4 +607,3 @@ async function loadJSZip() {
 
 // Initialisiere die Anwendung
 document.addEventListener('DOMContentLoaded', init);
-
