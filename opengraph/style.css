@@ -132,6 +132,7 @@ main {
 
 .card.bought-item::after {
     content: "✅";
+    pointer-events: none;
     position: absolute;
     top: 10px;
     right: 50px;
@@ -220,12 +221,12 @@ main {
 }
 
 /* Erste Karte: Verstecke "Nach oben" Button */
-.card:first-child .card-move-up-btn {
+.card:first-of-type .card-move-up-btn {
     display: none;
 }
 
 /* Letzte Karte: Verstecke "Nach unten" Button */
-.card:last-child .card-move-down-btn {
+.card:last-of-type .card-move-down-btn {
     display: none;
 }
 
