@@ -119,8 +119,7 @@ async function addCardFromUrl() {
         await updateCardFromUrl(cardData);
     } catch (error) {
         showMessage(`Fehler: ${error.message}`, 'error');
-    }
-    finally {
+    } finally {
         addCard(cardData);
         urlInput.value = '';
         urlInput.focus();
@@ -192,36 +191,28 @@ function importCSV(event) {
 
 async function downloadImageAsBlob(imageUrl) {
     // Versuche Bild direkt zu laden
-    try {
-        const response = await fetch(imageUrl);
-        if (!response.ok) throw new Error('Download fehlgeschlagen');
-        const blob = await response.blob();
-
-        // Prüfe ob Blob gültig ist (nicht leer/opaque)
-        if (blob.size > 0) {
-            return blob;
-        }
-        // Blob ist leer → Fallback zu Proxy
-        throw new Error('Blob ist leer (opaque response)');
-    } catch (e) {
-        // Direkter Download fehlgeschlagen → Versuche über imageProxy
-        console.log('Direkter Download fehlgeschlagen, nutze imageProxy:', imageUrl);
+    let blob = null;
+    const blobValid = () => blob && blob.size > 0;
+    const setBlob = async (proxy = false) => {
+        const url = proxy ? getProxiedImageUrl(imageUrl) : imageUrl;
         try {
-            const proxiedUrl = getProxiedImageUrl(imageUrl);
-            const response = await fetch(proxiedUrl);
+            const response = await fetch(url);
             if (response.ok) {
-                const blob = await response.blob();
-                if (blob.size > 0) {
-                    console.log('✓ Bild erfolgreich über Proxy geladen:', blob.size, 'bytes');
-                    return blob;
-                }
+                blob = await response.blob();
             }
-            throw new Error('Auch Proxy-Download fehlgeschlagen');
-        } catch (e2) {
-            console.warn('Bild-Download fehlgeschlagen (direkt + Proxy):', e2);
-            return null;
+        } catch (e) {
+            if (proxy) {
+                console.warn('Bild-Download fehlgeschlagen (direkt + Proxy):', e);
+            } else {
+                console.log('Direkter Download fehlgeschlagen, nutze imageProxy:', imageUrl);
+            }
         }
     }
+    await setBlob(false);
+    if (!blobValid()) {
+        await setBlob(true);
+    }
+    return blobValid() ? blob : null;
 }
 
 function getProxiedImageUrl(imageUrl) {
@@ -259,7 +250,7 @@ function updateCardUI(cardData) {
     article.classList.toggle('bought-item', cardData.bought);
 
     // Zeige/Verstecke Refresh-Button basierend auf URL
-    article.querySelector('.card-refresh-btn').classList.toggle("hidden",!cardData.url);
+    article.querySelector('.card-refresh-btn').classList.toggle("hidden", !cardData.url);
 
     // Setze Bild-Source
     if (cardData.image) {
@@ -275,6 +266,7 @@ function updateCardUI(cardData) {
         }
     }
 }
+
 function updateUI() {
     // Zeige Empty-State nur wenn keine Karten vorhanden sind
     container.querySelector('.empty-state')?.classList.toggle('hidden', cards.length > 0);
@@ -345,8 +337,7 @@ function addCard(cardData) {
             await updateCardFromUrl(cardData);
         } catch (error) {
             showMessage('Fehler beim Aktualisieren: ' + error.message, 'error');
-        }
-        finally {
+        } finally {
             updateCardUI(cardData);
         }
     });
