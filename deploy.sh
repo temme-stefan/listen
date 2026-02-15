@@ -60,5 +60,5 @@ deploy() {
 }
 
 # Führe Deployments nacheinander aus
-deploy "artur" "artur2025" "Arturs Geburtstagsliste"
-deploy "robin" "robin2025" "Robins Geburtstagsliste"
+deploy "artur" "artur2026" "Arturs Geburtstagsliste"
+deploy "robin" "robin2026" "Robins Geburtstagsliste"

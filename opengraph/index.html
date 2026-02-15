@@ -3,17 +3,60 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Open Graph Test</title>
-    <script src="graphdata.js"></script>
-
+    <title>Link List Creator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Open Graph Test</h1>
-<form>
-<input type="text" value="https://www.thalia.de/shop/home/artikeldetails/A1050251871">
-    <button>GetGraphData</button>
+<header>
+    <h1>🎁 Link List Creator</h1>
+    <div class="input-section">
+        <input id="url-input" type="text" placeholder="URL eingeben und Enter drücken (optional)..." autofocus>
+        <button id="add-btn">Mit URL</button>
+        <button id="add-manual-btn" class="btn-secondary">➕ Manuelle Karte</button>
+    </div>
+    <div class="export-section">
+        <button id="import-csv-btn" class="btn-import">📥 CSV Importieren</button>
+        <input type="file" id="import-csv-input" accept=".csv" style="display: none;">
+        <button id="export-csv-btn">📄 CSV Exportieren</button>
+        <button id="export-images-btn">🖼️ Bilder Exportieren</button>
+    </div>
+</header>
 
-</form>
-<output></output>
+<main id="cards-container">
+    <div class="empty-state">Füge Links hinzu, um loszulegen...</div>
+</main>
+
+<footer>© Stefan Temme 2026</footer>
+
+<template id="card-template">
+    <article class="card">
+        <div class="card-image">
+            <img src="" alt="Produktbild" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EKein Bild%3C/text%3E%3C/svg%3E'">
+            <input type="file" class="card-image-upload" accept="image/*" style="display: none;">
+            <button class="card-image-btn" title="Bild ändern">📷</button>
+        </div>
+        <div class="card-header">
+            <input type="text" class="card-title" placeholder="Titel / Beschreibung" required>
+        </div>
+        <div class="card-actions">
+            <button class="card-refresh-btn" title="Metadaten aktualisieren" style="display: none;">🔄</button>
+            <button class="card-move-up-btn" title="Nach oben">⬆️</button>
+            <button class="card-move-down-btn" title="Nach unten">⬇️</button>
+            <button class="delete-btn" title="Karte löschen">🗑️</button>
+        </div>
+        <div class="card-url">
+            <input type="url" class="card-url-input" placeholder="URL (optional)">
+        </div>
+        <div class="card-comment">
+            <textarea class="card-comment-input" placeholder="Bemerkung"></textarea>
+        </div>
+        <div class="card-bought">
+            <input type="checkbox" class="card-bought-checkbox">
+            <label>Gekauft</label>
+        </div>
+    </article>
+</template>
+
+<script src="graphdata.js"></script>
 </body>
 

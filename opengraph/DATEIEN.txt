@@ -1,0 +1,53 @@
+📁 Link List Creator - Dateiübersicht
+=====================================
+
+🎯 HAUPTDATEIEN
+--------------
+index.html          - Hauptanwendung (UI mit Kartensystem)
+style.css           - Stylesheet (ausgelagertes CSS)
+graphdata.js        - JavaScript-Logik (Verwaltung, Import, Export, Sortierung)
+proxy.php           - PHP-Proxy für Metadaten-Abruf (CORS-safe)
+
+📚 DOKUMENTATION
+---------------
+README.md           - Projektübersicht, Schnellstart und Funktionen
+ANLEITUNG.md        - Ausführliche Bedienungsanleitung mit Details
+TROUBLESHOOTING.md  - Fehlerbehebung (502, Server-Setup)
+SECURITY.md         - ⚠️ SICHERHEITSWARNUNG: Nicht öffentlich deployen!
+
+🧪 TESTS & TOOLS
+---------------
+test.html           - Automatische Funktionstests
+test_proxy.php      - PHP-Proxy Test-Script
+test-import.csv     - Beispiel-CSV für Import-Tests
+start.sh            - Server-Start-Script (ausführbar)
+
+📦 VERWENDUNG
+------------
+1. Server starten:  ./start.sh
+2. Browser öffnen:  http://localhost:8088/index.html
+3. URLs hinzufügen, CSV importieren, exportieren!
+
+🆕 FEATURES
+----------
+✅ CSV-Import        - Importiere bestehende Listen (Bildpfade bleiben erhalten)
+✅ Bild-Upload       - Eigene Bilder hochladen oder ersetzen (📷 Button)
+✅ Manuelle Karten   - Einträge ohne URL erstellen
+✅ Aktualisieren     - Metadaten von URL neu laden (🔄 Button)
+✅ Sortierung        - Karten verschieben (⬆️⬇️ Buttons)
+
+📤 EXPORTS
+---------
+links.csv          - CSV-Export (Format: sort;url;title;image;comment;bought)
+images.zip         - ZIP mit img/Ordner (automatische Dateinamen)
+
+🔗 INTEGRATION
+-------------
+Export kopieren nach:
+  - ../artur/links.csv
+  - ../artur/img/*.webp
+
+✅ STATUS
+--------
+Alle Funktionen implementiert und getestet!
+Server läuft auf Port 8088.

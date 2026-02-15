@@ -1,88 +1,555 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    const output = document.querySelector('output');
-    
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        // Lösche vorherige Ausgaben
-        output.innerHTML = '';
-        output.className = '';
-        
-        const urlInput = form.querySelector('input');
-        const urlValue = urlInput.value.trim();
+// Link List Creator - Client-side only
+class LinkListManager {
+    constructor() {
+        this.cards = [];
+        this.nextId = 1;
+        this.container = document.getElementById('cards-container');
+        this.urlInput = document.getElementById('url-input');
+        this.addBtn = document.getElementById('add-btn');
+        this.addManualBtn = document.getElementById('add-manual-btn');
+        this.importCsvBtn = document.getElementById('import-csv-btn');
+        this.importCsvInput = document.getElementById('import-csv-input');
+        this.exportCsvBtn = document.getElementById('export-csv-btn');
+        this.exportImagesBtn = document.getElementById('export-images-btn');
+        this.template = document.getElementById('card-template');
+
+        this.init();
+    }
+
+    init() {
+        // Event Listeners
+        this.addBtn.addEventListener('click', () => this.addCardFromUrl());
+        this.addManualBtn.addEventListener('click', () => this.addManualCard());
+        this.urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.addCardFromUrl();
+            }
+        });
+
+        this.importCsvBtn.addEventListener('click', () => this.importCsvInput.click());
+        this.importCsvInput.addEventListener('change', (e) => this.importCSV(e));
+
+        this.exportCsvBtn.addEventListener('click', () => this.exportCSV());
+        this.exportImagesBtn.addEventListener('click', () => this.exportImages());
+    }
+
+    showMessage(message, type = 'info') {
+        // Entferne alte Nachrichten
+        const oldMsg = this.container.querySelector('.status-message');
+        if (oldMsg) oldMsg.remove();
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `status-message ${type}`;
+        msgDiv.textContent = message;
+        this.container.insertBefore(msgDiv, this.container.firstChild);
+
+        if (type !== 'error') {
+            setTimeout(() => msgDiv.remove(), 3000);
+        }
+    }
+
+    async addCardFromUrl() {
+        const url = this.urlInput.value.trim();
+
+        if (!url) {
+            // Wenn keine URL, erstelle manuelle Karte
+            this.addManualCard();
+            return;
+        }
 
         try {
-            const url = new URL(urlValue);
-            
-            // Erstelle einen iframe
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+            new URL(url); // Validiere URL
+        } catch (e) {
+            this.showMessage('Ungültige URL', 'error');
+            return;
+        }
 
-            iframe.onload = function() {
-                try {
-                    const doc = iframe.contentDocument;
-                    
-                    if (!doc) {
-                        throw new Error('Dokument konnte nicht geladen werden (CORS)');
+        this.showMessage('Lade Metadaten...', 'loading');
+
+        try {
+            const response = await fetch(`proxy.php?url=${encodeURIComponent(url)}`);
+            const data = await response.json();
+
+            let cardData = {
+                id: this.nextId++,
+                url: url,
+                title: '',
+                image: '',
+                imageBlob: null,
+                imagePath: '', // Für CSV-Import
+                comment: '',
+                bought: false
+            };
+
+            if (data.success && data.metadata) {
+                // Erfolgreich Metadaten geladen
+                cardData.title = data.metadata.og.title || data.metadata.title || '';
+                cardData.image = data.metadata.og.image || '';
+
+                // Lade Bild als Blob
+                if (cardData.image) {
+                    try {
+                        cardData.imageBlob = await this.downloadImageAsBlob(cardData.image);
+                    } catch (e) {
+                        console.warn('Bild konnte nicht geladen werden:', e);
+                    }
+                }
+
+                this.showMessage('Metadaten erfolgreich geladen!', 'success');
+            } else {
+                // Fehlerfall: Nur URL befüllen
+                this.showMessage(`Metadaten konnten nicht geladen werden: ${data.error || 'Unbekannter Fehler'}. Bitte manuell ausfüllen.`, 'error');
+            }
+
+            this.addCard(cardData);
+            this.urlInput.value = '';
+            this.urlInput.focus();
+
+        } catch (error) {
+            this.showMessage(`Fehler: ${error.message}`, 'error');
+
+            // Erstelle Karte trotzdem mit nur URL
+            this.addCard({
+                id: this.nextId++,
+                url: url,
+                title: '',
+                image: '',
+                imageBlob: null,
+                imagePath: '',
+                comment: '',
+                bought: false
+            });
+
+            this.urlInput.value = '';
+        }
+    }
+
+    addManualCard() {
+        // Erstelle leere Karte ohne URL
+        this.addCard({
+            id: this.nextId++,
+            url: '',
+            title: '',
+            image: '',
+            imageBlob: null,
+            imagePath: '',
+            comment: '',
+            bought: false
+        });
+
+        this.showMessage('Manuelle Karte erstellt', 'success');
+        this.urlInput.value = '';
+    }
+
+    importCSV(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        this.showMessage('Importiere CSV...', 'loading');
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const csvContent = e.target.result;
+                const lines = csvContent.split('\n').filter(line => line.trim());
+
+                if (lines.length === 0) {
+                    this.showMessage('CSV-Datei ist leer', 'error');
+                    return;
+                }
+
+                // Parse CSV
+                let importedCount = 0;
+                lines.forEach(line => {
+                    const parts = line.split(';');
+                    if (parts.length >= 6) {
+                        const [sort, url, description, imageFilename, comment, bought] = parts;
+
+                        this.addCard({
+                            id: this.nextId++,
+                            url: url || '',
+                            title: description || '',
+                            image: '', // Kein Bild beim Import
+                            imageBlob: null,
+                            imagePath: imageFilename || '', // Pfad erhalten
+                            comment: comment || '',
+                            bought: bought.toLowerCase().trim() === 'true'
+                        });
+
+                        importedCount++;
+                    }
+                });
+
+                this.showMessage(`${importedCount} Karten erfolgreich importiert!`, 'success');
+
+                // Reset file input
+                event.target.value = '';
+
+            } catch (error) {
+                this.showMessage('Fehler beim Importieren: ' + error.message, 'error');
+                console.error('CSV Import Error:', error);
+            }
+        };
+
+        reader.onerror = () => {
+            this.showMessage('Fehler beim Lesen der Datei', 'error');
+        };
+
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    async downloadImageAsBlob(imageUrl) {
+        // Versuche Bild über Proxy zu laden (CORS-sicher)
+        try {
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error('Download fehlgeschlagen');
+            return await response.blob();
+        } catch (e) {
+            // Fallback: Versuche direkten Download
+            try {
+                const response = await fetch(imageUrl, { mode: 'no-cors' });
+                return await response.blob();
+            } catch (e2) {
+                console.warn('Bild-Download fehlgeschlagen:', e2);
+                return null;
+            }
+        }
+    }
+
+    addCard(cardData) {
+        // Entferne empty state
+        const emptyState = this.container.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+
+        // Erstelle Karte aus Template
+        const cardElement = this.template.content.cloneNode(true);
+        const article = cardElement.querySelector('.card');
+        article.dataset.id = cardData.id;
+
+        // Setze Werte
+        const titleInput = cardElement.querySelector('.card-title');
+        const urlInput = cardElement.querySelector('.card-url-input');
+        const commentInput = cardElement.querySelector('.card-comment-input');
+        const boughtCheckbox = cardElement.querySelector('.card-bought-checkbox');
+        const img = cardElement.querySelector('.card-image img');
+        const deleteBtn = cardElement.querySelector('.delete-btn');
+        const imageUploadInput = cardElement.querySelector('.card-image-upload');
+        const imageBtn = cardElement.querySelector('.card-image-btn');
+        const refreshBtn = cardElement.querySelector('.card-refresh-btn');
+        const moveUpBtn = cardElement.querySelector('.card-move-up-btn');
+        const moveDownBtn = cardElement.querySelector('.card-move-down-btn');
+
+        titleInput.value = cardData.title;
+        urlInput.value = cardData.url;
+        commentInput.value = cardData.comment;
+        boughtCheckbox.checked = cardData.bought;
+
+        // Zeige Refresh-Button nur wenn URL vorhanden
+        if (cardData.url) {
+            refreshBtn.style.display = 'inline-block';
+        }
+
+        if (cardData.image) {
+            if (cardData.imageBlob) {
+                img.src = URL.createObjectURL(cardData.imageBlob);
+            } else {
+                img.src = cardData.image;
+            }
+        }
+
+        // Event Listeners
+        titleInput.addEventListener('input', (e) => {
+            cardData.title = e.target.value;
+        });
+
+        urlInput.addEventListener('input', (e) => {
+            cardData.url = e.target.value;
+            // Zeige/Verstecke Refresh-Button
+            if (e.target.value.trim()) {
+                refreshBtn.style.display = 'inline-block';
+            } else {
+                refreshBtn.style.display = 'none';
+            }
+        });
+
+        commentInput.addEventListener('input', (e) => {
+            cardData.comment = e.target.value;
+        });
+
+        boughtCheckbox.addEventListener('change', (e) => {
+            cardData.bought = e.target.checked;
+            if (e.target.checked) {
+                article.classList.add('bought-item');
+            } else {
+                article.classList.remove('bought-item');
+            }
+        });
+
+        // Bild-Upload
+        imageBtn.addEventListener('click', () => {
+            imageUploadInput.click();
+        });
+
+        imageUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                // Speichere Blob
+                cardData.imageBlob = file;
+
+                // Zeige Vorschau
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                    cardData.image = file.name; // Dateiname merken
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            this.deleteCard(cardData.id);
+        });
+
+        // Refresh-Button: Metadaten neu laden
+        refreshBtn.addEventListener('click', async () => {
+            if (!cardData.url) return;
+
+            this.showMessage('Aktualisiere Metadaten...', 'loading');
+
+            try {
+                const response = await fetch(`proxy.php?url=${encodeURIComponent(cardData.url)}`);
+                const data = await response.json();
+
+                if (data.success && data.metadata) {
+                    // Aktualisiere Daten
+                    cardData.title = data.metadata.og.title || data.metadata.title || cardData.title;
+                    cardData.image = data.metadata.og.image || cardData.image;
+
+                    // Aktualisiere UI
+                    titleInput.value = cardData.title;
+
+                    // Lade neues Bild
+                    if (cardData.image) {
+                        try {
+                            cardData.imageBlob = await this.downloadImageAsBlob(cardData.image);
+                            img.src = URL.createObjectURL(cardData.imageBlob);
+                        } catch (e) {
+                            img.src = cardData.image;
+                        }
                     }
 
-                    // Extrahiere Open Graph Metadaten
-                    const metadata = {
-                        title: doc.querySelector('title')?.textContent || '',
-                        og: {
-                            title: doc.querySelector('meta[property="og:title"]')?.content || '',
-                            description: doc.querySelector('meta[property="og:description"]')?.content || '',
-                            image: doc.querySelector('meta[property="og:image"]')?.content || '',
-                            url: doc.querySelector('meta[property="og:url"]')?.content || '',
-                            type: doc.querySelector('meta[property="og:type"]')?.content || ''
-                        }
-                    };
-                    
-                    // Erstelle HTML für die Ausgabe
-                    const resultHTML = `
-                        <h3>Gefundene Metadaten:</h3>
-                        <div class="metadata">
-                            <p><strong>Seitentitel:</strong> ${metadata.title}</p>
-                            <h4>Open Graph Daten:</h4>
-                            <ul>
-                                <li><strong>OG Titel:</strong> ${metadata.og.title}</li>
-                                <li><strong>OG Beschreibung:</strong> ${metadata.og.description}</li>
-                                <li><strong>OG Bild:</strong> ${metadata.og.image}</li>
-                                <li><strong>OG URL:</strong> ${metadata.og.url}</li>
-                                <li><strong>OG Typ:</strong> ${metadata.og.type}</li>
-                            </ul>
-                        </div>
-                    `;
-                    
-                    output.innerHTML = resultHTML;
-                    output.className = 'success';
-                    
-                } catch (error) {
-                    output.textContent = 'Leider können die Metadaten aufgrund von CORS-Einschränkungen nicht ausgelesen werden. ' +
-                                       'Ein Server-seitiger Proxy wäre hier erforderlich.';
-                    output.className = 'error';
-                    console.error('Fehler beim Parsen:', error);
+                    this.showMessage('Metadaten erfolgreich aktualisiert!', 'success');
+                } else {
+                    this.showMessage('Aktualisierung fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'), 'error');
                 }
-                
-                // Entferne den iframe wieder
-                document.body.removeChild(iframe);
-            };
+            } catch (error) {
+                this.showMessage('Fehler beim Aktualisieren: ' + error.message, 'error');
+            }
+        });
 
-            iframe.onerror = function() {
-                output.textContent = 'Fehler beim Laden der Seite';
-                output.className = 'error';
-                document.body.removeChild(iframe);
-            };
+        // Sortier-Buttons
+        moveUpBtn.addEventListener('click', () => {
+            this.moveCard(cardData.id, 'up');
+        });
 
-            // Setze die URL des iframes
-            iframe.src = url.href;
-            
-        } catch (urlError) {
-            output.textContent = 'Bitte geben Sie eine gültige URL ein.';
-            output.className = 'error';
-            console.error('Ungültige URL:', urlError.message);
+        moveDownBtn.addEventListener('click', () => {
+            this.moveCard(cardData.id, 'down');
+        });
+
+        // Füge Karte hinzu
+        this.container.appendChild(cardElement);
+        this.cards.push(cardData);
+
+        // Fokusiere Bemerkung
+        setTimeout(() => {
+            commentInput.focus();
+        }, 100);
+    }
+
+    deleteCard(id) {
+        const cardIndex = this.cards.findIndex(c => c.id === id);
+        if (cardIndex !== -1) {
+            this.cards.splice(cardIndex, 1);
         }
-    });
+
+        const cardElement = this.container.querySelector(`[data-id="${id}"]`);
+        if (cardElement) {
+            cardElement.remove();
+        }
+
+        // Zeige empty state wenn keine Karten mehr da sind
+        if (this.cards.length === 0) {
+            this.container.innerHTML = '<div class="empty-state">Füge Links hinzu, um loszulegen...</div>';
+        }
+
+        this.showMessage('Karte gelöscht', 'success');
+    }
+
+    moveCard(id, direction) {
+        const cardIndex = this.cards.findIndex(c => c.id === id);
+        if (cardIndex === -1) return;
+
+        const newIndex = direction === 'up' ? cardIndex - 1 : cardIndex + 1;
+
+        // Prüfe Grenzen
+        if (newIndex < 0 || newIndex >= this.cards.length) return;
+
+        // Tausche in Array
+        [this.cards[cardIndex], this.cards[newIndex]] = [this.cards[newIndex], this.cards[cardIndex]];
+
+        // Tausche im DOM
+        const cardElement = this.container.querySelector(`[data-id="${id}"]`);
+        const otherCardId = this.cards[newIndex].id;
+        const otherCardElement = this.container.querySelector(`[data-id="${otherCardId}"]`);
+
+        if (direction === 'up') {
+            this.container.insertBefore(cardElement, otherCardElement);
+        } else {
+            this.container.insertBefore(otherCardElement, cardElement);
+        }
+    }
+
+    generateImageFilename(url, title, index) {
+        // Erstelle Dateinamen basierend auf Titel
+        let filename = title
+            .toLowerCase()
+            .replace(/[^a-z0-9äöüß\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .substring(0, 50);
+
+        if (!filename) {
+            filename = `image-${index}`;
+        }
+
+        // Füge Präfix hinzu
+        return `${index + 1}-${filename}`;
+    }
+
+    exportCSV() {
+        if (this.cards.length === 0) {
+            this.showMessage('Keine Karten zum Exportieren vorhanden', 'error');
+            return;
+        }
+
+        // Erstelle CSV
+        const csvLines = this.cards.map((card, index) => {
+            const sort = index + 1;
+            const url = card.url || '';
+            const description = card.title || '';
+
+            // Verwende imagePath falls vorhanden (von Import), sonst generiere neu
+            let imageFilename = '';
+            if (card.imagePath) {
+                // Behalte ursprünglichen Pfad (von Import)
+                imageFilename = card.imagePath;
+            } else if (card.image || card.imageBlob) {
+                // Generiere neuen Dateinamen
+                imageFilename = this.generateImageFilename(card.url, card.title, index) + this.getImageExtension(card.image || 'jpg');
+            }
+
+            const comment = card.comment || '';
+            const bought = card.bought ? 'true' : 'false';
+
+            return `${sort};${url};${description};${imageFilename};${comment};${bought}`;
+        });
+
+        const csvContent = csvLines.join('\n');
+
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'links.csv';
+        link.click();
+
+        this.showMessage('CSV erfolgreich exportiert!', 'success');
+    }
+
+    getImageExtension(url) {
+        const match = url.match(/\.(webp|jpg|jpeg|png|gif)($|\?)/i);
+        return match ? '.' + match[1].toLowerCase() : '.jpg';
+    }
+
+    async exportImages() {
+        if (this.cards.length === 0) {
+            this.showMessage('Keine Karten zum Exportieren vorhanden', 'error');
+            return;
+        }
+
+        const cardsWithImages = this.cards.filter(card => card.image);
+
+        if (cardsWithImages.length === 0) {
+            this.showMessage('Keine Bilder zum Exportieren vorhanden', 'error');
+            return;
+        }
+
+        this.showMessage(`Exportiere ${cardsWithImages.length} Bilder...`, 'loading');
+
+        try {
+            // Dynamisch JSZip laden (oder inline einbinden)
+            if (typeof JSZip === 'undefined') {
+                // Erstelle ZIP manuell oder lade JSZip
+                await this.loadJSZip();
+            }
+
+            const zip = new JSZip();
+            const imgFolder = zip.folder('img');
+
+            for (let i = 0; i < this.cards.length; i++) {
+                const card = this.cards[i];
+                if (!card.image) continue;
+
+                const filename = this.generateImageFilename(card.url, card.title, i) + this.getImageExtension(card.image);
+
+                try {
+                    let blob = card.imageBlob;
+
+                    if (!blob) {
+                        // Versuche Bild neu zu laden
+                        blob = await this.downloadImageAsBlob(card.image);
+                    }
+
+                    if (blob) {
+                        imgFolder.file(filename, blob);
+                    } else {
+                        console.warn(`Bild konnte nicht geladen werden: ${card.image}`);
+                    }
+                } catch (e) {
+                    console.warn(`Fehler beim Laden von Bild ${i}:`, e);
+                }
+            }
+
+            // Generiere ZIP
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+            // Download ZIP
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipBlob);
+            link.download = 'images.zip';
+            link.click();
+
+            this.showMessage('Bilder erfolgreich exportiert!', 'success');
+
+        } catch (error) {
+            this.showMessage(`Fehler beim Exportieren: ${error.message}`, 'error');
+            console.error('Export error:', error);
+        }
+    }
+
+    async loadJSZip() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+}
+
+// Initialisiere die Anwendung
+document.addEventListener('DOMContentLoaded', () => {
+    new LinkListManager();
 });
