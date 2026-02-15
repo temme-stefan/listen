@@ -245,6 +245,11 @@ class LinkListManager {
         commentInput.value = cardData.comment;
         boughtCheckbox.checked = cardData.bought;
 
+        // Setze bought-item CSS-Klasse wenn bereits gekauft
+        if (cardData.bought) {
+            article.classList.add('bought-item');
+        }
+
         // Zeige Refresh-Button nur wenn URL vorhanden
         if (cardData.url) {
             refreshBtn.style.display = 'inline-block';
@@ -395,17 +400,21 @@ class LinkListManager {
         // Prüfe Grenzen
         if (newIndex < 0 || newIndex >= this.cards.length) return;
 
+        // Speichere andere ID VOR dem Tausch
+        const otherCardId = this.cards[newIndex].id;
+
         // Tausche in Array
         [this.cards[cardIndex], this.cards[newIndex]] = [this.cards[newIndex], this.cards[cardIndex]];
 
         // Tausche im DOM
         const cardElement = this.container.querySelector(`[data-id="${id}"]`);
-        const otherCardId = this.cards[newIndex].id;
         const otherCardElement = this.container.querySelector(`[data-id="${otherCardId}"]`);
 
         if (direction === 'up') {
+            // Nach oben: Setze vor das andere Element
             this.container.insertBefore(cardElement, otherCardElement);
         } else {
+            // Nach unten: Setze das andere Element vor dieses
             this.container.insertBefore(otherCardElement, cardElement);
         }
     }

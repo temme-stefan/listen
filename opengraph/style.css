@@ -208,6 +208,16 @@ main {
     background-color: #5a6268 !important;
 }
 
+/* Erste Karte: Verstecke "Nach oben" Button */
+.card:first-child .card-move-up-btn {
+    display: none;
+}
+
+/* Letzte Karte: Verstecke "Nach unten" Button */
+.card:last-child .card-move-down-btn {
+    display: none;
+}
+
 .card-url {
     grid-area: url;
 }
@@ -295,4 +305,3 @@ footer {
         min-height: 100px;
     }
 }
-
