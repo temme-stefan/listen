@@ -400,6 +400,10 @@ class LinkListManager {
         // Prüfe Grenzen
         if (newIndex < 0 || newIndex >= this.cards.length) return;
 
+        // FLIP Animation: First - Speichere alle aktuellen Positionen
+        const allCards = Array.from(this.container.querySelectorAll('.card'));
+        const firstPositions = allCards.map(card => card.getBoundingClientRect());
+
         // Speichere andere ID VOR dem Tausch
         const otherCardId = this.cards[newIndex].id;
 
@@ -417,6 +421,38 @@ class LinkListManager {
             // Nach unten: Setze das andere Element vor dieses
             this.container.insertBefore(otherCardElement, cardElement);
         }
+
+        // FLIP Animation: Last - Hole neue Positionen
+        const lastPositions = allCards.map(card => card.getBoundingClientRect());
+
+        // FLIP Animation: Invert & Play
+        allCards.forEach((card, index) => {
+            const first = firstPositions[index];
+            const last = lastPositions[index];
+            const deltaY = first.top - last.top;
+
+            if (deltaY !== 0) {
+                // Invert: Setze Karte zurück auf alte Position (ohne Transition)
+                card.style.transition = 'none';
+                card.style.transform = `translateY(${deltaY}px)`;
+
+                // Füge moving-Klasse für visuelles Feedback hinzu
+                card.classList.add('card-moving');
+
+                // Play: Animiere zur neuen Position
+                requestAnimationFrame(() => {
+                    card.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.transform = 'translateY(0)';
+
+                    // Entferne moving-Klasse nach Animation
+                    setTimeout(() => {
+                        card.classList.remove('card-moving');
+                        card.style.transition = '';
+                        card.style.transform = '';
+                    }, 300);
+                });
+            }
+        });
     }
 
     generateImageFilename(url, title, index) {
@@ -562,3 +598,4 @@ class LinkListManager {
 document.addEventListener('DOMContentLoaded', () => {
     new LinkListManager();
 });
+
