@@ -31,15 +31,15 @@
 <template id="card-template">
     <article class="card">
         <div class="card-image">
-            <img src="" alt="Produktbild" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EKein Bild%3C/text%3E%3C/svg%3E'">
-            <input type="file" class="card-image-upload" accept="image/*" style="display: none;">
+            <img src="noimg.svg" alt="Produktbild">
+            <input type="file" class="card-image-upload hidden" accept="image/*">
             <button class="card-image-btn" title="Bild ändern">📷</button>
         </div>
         <div class="card-header">
             <input type="text" class="card-title" placeholder="Titel / Beschreibung" required>
         </div>
         <div class="card-actions">
-            <button class="card-refresh-btn" title="Metadaten aktualisieren" style="display: none;">🔄</button>
+            <button class="card-refresh-btn" title="Metadaten aktualisieren">🔄</button>
             <button class="card-move-up-btn" title="Nach oben">⬆️</button>
             <button class="card-move-down-btn" title="Nach unten">⬇️</button>
             <button class="delete-btn" title="Karte löschen">🗑️</button>

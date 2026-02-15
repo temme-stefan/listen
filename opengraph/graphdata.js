@@ -56,6 +56,20 @@ function showMessage(message, type = 'info') {
     }
 }
 
+function getDefaultCardData() {
+    return {
+        id: nextId++,
+        url: '',
+        title: '',
+        image: '',
+        imageBlob: null,
+        imageBlobUrl: null,
+        imagePath: '',
+        comment: '',
+        bought: false
+    };
+}
+
 async function addCardFromUrl() {
     const url = urlInput.value.trim();
 
@@ -78,16 +92,8 @@ async function addCardFromUrl() {
         const response = await fetch(`proxy.php?url=${encodeURIComponent(url)}`);
         const data = await response.json();
 
-        let cardData = {
-            id: nextId++,
-            url: url,
-            title: '',
-            image: '',
-            imageBlob: null,
-            imagePath: '', // Für CSV-Import
-            comment: '',
-            bought: false
-        };
+        const cardData = getDefaultCardData();
+        cardData.url = url;
 
         if (data.success && data.metadata) {
             // Erfolgreich Metadaten geladen
@@ -98,6 +104,9 @@ async function addCardFromUrl() {
             if (cardData.image) {
                 try {
                     cardData.imageBlob = await downloadImageAsBlob(cardData.image);
+                    if (cardData.imageBlob) {
+                        cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
+                    }
                 } catch (e) {
                     console.warn('Bild konnte nicht geladen werden:', e);
                 }
@@ -117,16 +126,9 @@ async function addCardFromUrl() {
         showMessage(`Fehler: ${error.message}`, 'error');
 
         // Erstelle Karte trotzdem mit nur URL
-        addCard({
-            id: nextId++,
-            url: url,
-            title: '',
-            image: '',
-            imageBlob: null,
-            imagePath: '',
-            comment: '',
-            bought: false
-        });
+        const cardData = getDefaultCardData();
+        cardData.url = url;
+        addCard(cardData);
 
         urlInput.value = '';
     }
@@ -134,16 +136,7 @@ async function addCardFromUrl() {
 
 function addManualCard() {
     // Erstelle leere Karte ohne URL
-    addCard({
-        id: nextId++,
-        url: '',
-        title: '',
-        image: '',
-        imageBlob: null,
-        imagePath: '',
-        comment: '',
-        bought: false
-    });
+    addCard(getDefaultCardData());
 
     showMessage('Manuelle Karte erstellt', 'success');
     urlInput.value = '';
@@ -173,17 +166,15 @@ function importCSV(event) {
                 if (parts.length >= 6) {
                     const [sort, url, description, imageFilename, comment, bought] = parts;
 
-                    addCard({
-                        id: nextId++,
-                        url: url || '',
-                        title: description || '',
-                        image: '', // Kein Bild beim Import
-                        imageBlob: null,
-                        imagePath: imageFilename || '', // Pfad erhalten
-                        comment: comment || '',
-                        bought: bought.toLowerCase().trim() === 'true'
-                    });
+                    const cardData = getDefaultCardData();
+                    cardData.url = url || '';
+                    cardData.title = description || '';
+                    cardData.image = ''; // Kein Bild beim Import
+                    cardData.imagePath = imageFilename || ''; // Pfad erhalten
+                    cardData.comment = comment || '';
+                    cardData.bought = bought.toLowerCase().trim() === 'true';
 
+                    addCard(cardData);
                     importedCount++;
                 }
             });
@@ -250,67 +241,83 @@ function getProxiedImageUrl(imageUrl) {
     return imageUrl;
 }
 
-function addCard(cardData) {
-    // Entferne empty state falls vorhanden
-    container.querySelector('.empty-state')?.remove();
+function updateCardUI(cardData) {
+    // Finde DOM-Element für diese Karte
+    const article = container.querySelector(`[data-id="${cardData.id}"]`);
+    if (!article) return;
 
+    // Setze Input-Werte
+    Object.entries({
+        '.card-title': 'title',
+        '.card-url-input': 'url',
+        '.card-comment-input': 'comment'
+    }).forEach(([selector, key]) => {
+        const input = article.querySelector(selector);
+        if (input.value !== cardData[key]) {
+            input.value = cardData[key];
+        }
+    });
+    const boughtCheckbox = article.querySelector('.card-bought-checkbox');
+    if (boughtCheckbox.checked !== cardData.bought) {
+        boughtCheckbox.checked = cardData.bought;
+    }
+
+    // Setze CSS-Klasse für "gekauft"
+    article.classList.toggle('bought-item', cardData.bought);
+
+    // Zeige/Verstecke Refresh-Button basierend auf URL
+    article.querySelector('.card-refresh-btn').classList.toggle("hidden",!cardData.url);
+
+    // Setze Bild-Source
+    if (cardData.image) {
+        const img = article.querySelector('.card-image img');
+        const src = cardData.imageBlob
+            ? cardData.imageBlobUrl
+            : getProxiedImageUrl(cardData.image);
+        if (img.src !== src) {
+            if (img.src.startsWith('blob:')) {
+                URL.revokeObjectURL(img.src);
+            }
+            img.src = src;
+        }
+    }
+}
+function updateUI() {
+    // Zeige Empty-State nur wenn keine Karten vorhanden sind
+    container.querySelector('.empty-state')?.classList.toggle('hidden', cards.length > 0);
+}
+
+function addCard(cardData) {
     // Erstelle Karte aus Template
+
     const cardElement = template.content.cloneNode(true);
     const article = cardElement.querySelector('.card');
     article.dataset.id = cardData.id;
 
-    // DOM-Elemente (mehrfach genutzt)
-    const titleInput = cardElement.querySelector('.card-title');
-    const urlInput = cardElement.querySelector('.card-url-input');
-    const commentInput = cardElement.querySelector('.card-comment-input');
-    const img = cardElement.querySelector('.card-image img');
-    const refreshBtn = cardElement.querySelector('.card-refresh-btn');
-
-    // Setze initiale Werte
-    titleInput.value = cardData.title;
-    urlInput.value = cardData.url;
-    commentInput.value = cardData.comment;
-    cardElement.querySelector('.card-bought-checkbox').checked = cardData.bought;
-
-    // Setze bought-item CSS-Klasse wenn bereits gekauft
-    if (cardData.bought) {
-        article.classList.add('bought-item');
-    }
-
-    // Zeige Refresh-Button nur wenn URL vorhanden
-    if (cardData.url) {
-        refreshBtn.style.display = 'inline-block';
-    }
-
-    // Setze Bild falls vorhanden
-    if (cardData.image) {
-        img.src = cardData.imageBlob
-            ? URL.createObjectURL(cardData.imageBlob)
-            : getProxiedImageUrl(cardData.image);
-    }
-
-    // Event Listeners
-    titleInput.addEventListener('input', (e) => {
+    // Event Listeners für Daten-Änderungen
+    article.querySelector('.card-title').addEventListener('input', (e) => {
         cardData.title = e.target.value;
+        updateCardUI(cardData);
     });
 
-    urlInput.addEventListener('input', (e) => {
+    article.querySelector('.card-url-input').addEventListener('input', (e) => {
         cardData.url = e.target.value;
-        refreshBtn.style.display = e.target.value.trim() ? 'inline-block' : 'none';
+        updateCardUI(cardData);
     });
 
-    commentInput.addEventListener('input', (e) => {
+    article.querySelector('.card-comment-input').addEventListener('input', (e) => {
         cardData.comment = e.target.value;
+        updateCardUI(cardData);
     });
 
-    cardElement.querySelector('.card-bought-checkbox').addEventListener('change', (e) => {
+    article.querySelector('.card-bought-checkbox').addEventListener('change', (e) => {
         cardData.bought = e.target.checked;
-        article.classList.toggle('bought-item', e.target.checked);
+        updateCardUI(cardData);
     });
 
     // Bild-Upload
-    const imageUploadInput = cardElement.querySelector('.card-image-upload');
-    cardElement.querySelector('.card-image-btn').addEventListener('click', () => {
+    const imageUploadInput = article.querySelector('.card-image-upload');
+    article.querySelector('.card-image-btn').addEventListener('click', () => {
         imageUploadInput.click();
     });
 
@@ -318,21 +325,25 @@ function addCard(cardData) {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
             cardData.imageBlob = file;
+            cardData.image = file.name;
+            if (cardData.imageBlob && !cardData.imageBlobUrl) {
+                cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
+            }
+
+            // Zeige Vorschau via FileReader
             const reader = new FileReader();
-            reader.onload = (e) => {
-                img.src = e.target.result;
-                cardData.image = file.name;
-            };
+            reader.onload = () => updateCardUI(cardData);
             reader.readAsDataURL(file);
         }
     });
 
-    cardElement.querySelector('.delete-btn').addEventListener('click', () => {
+    // Delete-Button
+    article.querySelector('.delete-btn').addEventListener('click', () => {
         deleteCard(cardData.id);
     });
 
     // Refresh-Button: Metadaten neu laden
-    refreshBtn.addEventListener('click', async () => {
+    article.querySelector('.card-refresh-btn').addEventListener('click', async () => {
         if (!cardData.url) return;
 
         showMessage('Aktualisiere Metadaten...', 'loading');
@@ -344,15 +355,15 @@ function addCard(cardData) {
             if (data.success && data.metadata) {
                 cardData.title = data.metadata.og.title || data.metadata.title || cardData.title;
                 cardData.image = data.metadata.og.image || cardData.image;
-                titleInput.value = cardData.title;
 
                 if (cardData.image) {
                     cardData.imageBlob = await downloadImageAsBlob(cardData.image);
-                    img.src = cardData.imageBlob
-                        ? URL.createObjectURL(cardData.imageBlob)
-                        : getProxiedImageUrl(cardData.image);
+                    if (cardData.imageBlob) {
+                        cardData.imageBlobUrl = URL.createObjectURL(cardData.imageBlob);
+                    }
                 }
 
+                updateCardUI(cardData);
                 showMessage('Metadaten erfolgreich aktualisiert!', 'success');
             } else {
                 showMessage('Aktualisierung fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'), 'error');
@@ -363,26 +374,35 @@ function addCard(cardData) {
     });
 
     // Sortier-Buttons
-    cardElement.querySelector('.card-move-up-btn').addEventListener('click', () => {
+    article.querySelector('.card-move-up-btn').addEventListener('click', () => {
         moveCard(cardData.id, 'up');
     });
 
-    cardElement.querySelector('.card-move-down-btn').addEventListener('click', () => {
+    article.querySelector('.card-move-down-btn').addEventListener('click', () => {
         moveCard(cardData.id, 'down');
     });
 
-    // Füge Karte hinzu
+    // Füge Karte zum DOM hinzu
     container.appendChild(cardElement);
     cards.push(cardData);
+    updateUI();
+
+    // Initiales UI-Rendering
+    updateCardUI(cardData);
 
     // Fokusiere Bemerkung
-    setTimeout(() => commentInput.focus(), 100);
+    setTimeout(() => article.querySelector('.card-comment-input').focus(), 100);
 }
 
 
 function deleteCard(id) {
     const cardIndex = cards.findIndex(c => c.id === id);
     if (cardIndex !== -1) {
+        // Befreie Blob-URL vor dem Löschen
+        const cardData = cards[cardIndex];
+        if (cardData.imageBlobUrl) {
+            URL.revokeObjectURL(cardData.imageBlobUrl);
+        }
         cards.splice(cardIndex, 1);
     }
 
@@ -391,10 +411,7 @@ function deleteCard(id) {
         cardElement.remove();
     }
 
-    // Zeige empty state wenn keine Karten mehr da sind
-    if (cards.length === 0) {
-        container.innerHTML = '<div class="empty-state">Füge Links hinzu, um loszulegen...</div>';
-    }
+    updateUI();
 
     showMessage('Karte gelöscht', 'success');
 }
@@ -511,7 +528,7 @@ function exportCSV() {
     const csvContent = csvLines.join('\n');
 
     // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'links.csv';
@@ -579,7 +596,7 @@ async function exportImages() {
         }
 
         // Generiere ZIP
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipBlob = await zip.generateAsync({type: 'blob'});
 
         // Download ZIP
         const link = document.createElement('a');

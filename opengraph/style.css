@@ -301,6 +301,10 @@ footer {
     font-style: italic;
 }
 
+.hidden {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .card {
         grid-template:
