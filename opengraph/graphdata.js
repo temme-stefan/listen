@@ -461,7 +461,7 @@ class LinkListManager {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'links.csv';
+        link.download = 'Artur_Weihnachten_2025.csv';
         link.click();
 
         this.showMessage('CSV erfolgreich exportiert!', 'success');

@@ -145,16 +145,8 @@ images.zip
 
 ### Integration mit Template
 
-Exportierte Dateien können direkt verwendet werden:
+Exportierte Dateien können direkt verwendet werden
 
-```bash
-# Kopiere Exports
-cp links.csv ../artur/
-unzip images.zip -d ../artur/
-
-# Resultat:
-# - artur/links.csv
-# - artur/img/*.webp
 ```
 
 ## ⚠️ Wichtige Hinweise
