@@ -200,21 +200,47 @@ class LinkListManager {
     }
 
     async downloadImageAsBlob(imageUrl) {
-        // Versuche Bild über Proxy zu laden (CORS-sicher)
+        // Versuche Bild direkt zu laden
         try {
             const response = await fetch(imageUrl);
             if (!response.ok) throw new Error('Download fehlgeschlagen');
-            return await response.blob();
+            const blob = await response.blob();
+
+            // Prüfe ob Blob gültig ist (nicht leer/opaque)
+            if (blob.size > 0) {
+                return blob;
+            }
+            // Blob ist leer → Fallback zu Proxy
+            throw new Error('Blob ist leer (opaque response)');
         } catch (e) {
-            // Fallback: Versuche direkten Download
+            // Direkter Download fehlgeschlagen → Versuche über imageProxy
+            console.log('Direkter Download fehlgeschlagen, nutze imageProxy:', imageUrl);
             try {
-                const response = await fetch(imageUrl, { mode: 'no-cors' });
-                return await response.blob();
+                const proxiedUrl = this.getProxiedImageUrl(imageUrl);
+                const response = await fetch(proxiedUrl);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    if (blob.size > 0) {
+                        console.log('✓ Bild erfolgreich über Proxy geladen:', blob.size, 'bytes');
+                        return blob;
+                    }
+                }
+                throw new Error('Auch Proxy-Download fehlgeschlagen');
             } catch (e2) {
-                console.warn('Bild-Download fehlgeschlagen:', e2);
+                console.warn('Bild-Download fehlgeschlagen (direkt + Proxy):', e2);
                 return null;
             }
         }
+    }
+
+    getProxiedImageUrl(imageUrl) {
+        // Prüfe ob URL extern ist (http/https)
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            // Nutze Image-Proxy für externe URLs
+            return `imageProxy.php?url=${encodeURIComponent(imageUrl)}`;
+        }
+        // Lokale/relative URLs direkt nutzen
+        return imageUrl;
     }
 
     addCard(cardData) {
@@ -259,7 +285,7 @@ class LinkListManager {
             if (cardData.imageBlob) {
                 img.src = URL.createObjectURL(cardData.imageBlob);
             } else {
-                img.src = cardData.image;
+                img.src = this.getProxiedImageUrl(cardData.image);
             }
         }
 
@@ -336,11 +362,11 @@ class LinkListManager {
 
                     // Lade neues Bild
                     if (cardData.image) {
-                        try {
-                            cardData.imageBlob = await this.downloadImageAsBlob(cardData.image);
+                        cardData.imageBlob = await this.downloadImageAsBlob(cardData.image);
+                        if (cardData.imageBlob) {
                             img.src = URL.createObjectURL(cardData.imageBlob);
-                        } catch (e) {
-                            img.src = cardData.image;
+                        } else {
+                            img.src = this.getProxiedImageUrl(cardData.image);
                         }
                     }
 
@@ -556,7 +582,7 @@ class LinkListManager {
                         blob = await this.downloadImageAsBlob(card.image);
                     }
 
-                    if (blob) {
+                    if (blob && blob.size > 0) {
                         imgFolder.file(filename, blob);
                     } else {
                         console.warn(`Bild konnte nicht geladen werden: ${card.image}`);
@@ -598,4 +624,3 @@ class LinkListManager {
 document.addEventListener('DOMContentLoaded', () => {
     new LinkListManager();
 });
-
