@@ -187,7 +187,11 @@
 
         const p = node.querySelector("p")
         p.innerText = comment
-        const img = node.querySelector("img");
+
+        let img = node.querySelector("img");
+        if (!image || image.length==0) {
+            image = "noimg.svg";
+        }
         img.src = "img/" + image;
         const a = node.querySelector("a");
         if (url) {
