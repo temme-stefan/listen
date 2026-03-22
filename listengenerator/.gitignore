@@ -1,0 +1,18 @@
+# Laufzeitdaten – nur auf dem Server, nicht im Repository
+listen/*/links.csv
+listen/*/img/
+listen/*/index.html
+
+# Secrets
+.env
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# Vite Build-Output (wird beim Deploy frisch erzeugt)
+public/
+
+# TypeScript Build-Info
+frontend/*.tsbuildinfo
+frontend/tsconfig.*.tsbuildinfo

@@ -1,0 +1,12 @@
+[
+    {
+        "name": "artur",
+        "title": "Arturs Wunschliste",
+        "archived": false
+    },
+    {
+        "name": "robin",
+        "title": "Robins Wunschliste",
+        "archived": false
+    }
+]

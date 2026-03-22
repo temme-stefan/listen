@@ -20,5 +20,13 @@ jobs:
           echo -e "Host *\n  IdentityFile ~/.ssh/id_github\n" > ~/.ssh/config
           chmod 600 ~/.ssh/config
           ssh-keyscan -H "$SSH_SERVER" >> ~/.ssh/known_hosts
-      - name: deploy
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: listengenerator/frontend/package-lock.json
+      - name: deploy static lists
         run: cd "$GITHUB_WORKSPACE"; ./deploy.sh
+      - name: deploy listengenerator
+        run: cd "$GITHUB_WORKSPACE/listengenerator"; ./deploy.sh

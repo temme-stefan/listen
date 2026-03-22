@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="image/png" sizes="16x16" rel="icon" href="img/icons8-geschenk-3d-fluency-16.png">
+    <link type="image/png" sizes="32x32" rel="icon" href="img/icons8-geschenk-3d-fluency-32.png">
+    <link type="image/png" sizes="96x96" rel="icon" href="img/icons8-geschenk-3d-fluency-96.png">
+    <title>%title</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            margin-block: 0;
+        }
+
+        body {
+            display: grid;
+            grid-template:
+            "header" auto
+            "menu" auto
+            "main" 1fr
+            "footer" auto
+            / 1fr;
+            max-height: 100dvh;
+            gap: 0.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding-block-start: 1rem;
+            padding-inline: 0.5rem;
+            @media (min-width: 800px) {
+                padding-block-start: 3rem;
+            }
+        }
+
+        menu {
+            display: flex;
+            justify-content: center;
+            padding-block: 0.5rem;
+            padding-inline: 0.5rem;
+        }
+
+        select {
+            background-color: #00000015;
+            border: 1px solid #00000075;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 5px 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding-block: 0.5rem;
+            padding-inline: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: bold;
+            @media (min-width: 800px) {
+                font-size: 2rem;
+            }
+        }
+
+        main {
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            padding: 1rem 0.5rem;
+            gap: 1rem;
+            @media (min-width: 800px) {
+                padding: 3rem;
+            }
+        }
+
+        .card {
+            max-width: min(100dvw, 500px);
+            display: grid;
+
+            &.hidden {
+                display: none;
+            }
+
+            justify-items: center;
+            border: 1px solid #00000075;
+            background-color: #00000015;
+            border-radius: 5px;
+            box-shadow: 5px 5px 5px #00000030;
+            gap: 1rem;
+            padding: 1rem 0.5rem;
+            width: 100%;
+            grid-template:
+                "img header" auto
+                "img comment" auto
+                "img gap" 1fr
+                "img link" auto
+                / 1fr 2fr;
+            position: relative;
+
+            picture {
+                grid-area: img;
+                background-color: #fff;
+                border: 1px solid #00000035;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                padding: 0.5rem;
+                transition: all 1s ease-out;
+                width: 100%;
+            }
+
+            img {
+                max-width: 100%;
+            }
+
+            header {
+                grid-area: header;
+                padding: 0;
+                font-size: 1.2rem;
+                font-weight: bold;
+            }
+
+            p:not(:empty) {
+                grid-area: comment;
+                font-style: italic;
+                background-color: #00000015;
+                /*border: 1px solid #00000035;*/
+                border-radius: 5px;
+                padding: 0.5rem;
+                width: 100%;
+            }
+
+            a {
+                grid-area: link;
+                justify-self: end;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 80%;
+            }
+
+            &.bought {
+                border-color: darkgreen;
+                position: relative;
+
+                &:after {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    background-color: #00800050;
+                    pointer-events: none;
+                    content: "✅";
+                    font-size: 4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+<header><h1>&#127873;%title&#127873;</h1></header>
+<menu>
+    <form id="filter">
+        <select>
+            <option selected value="all">Alle</option>
+            <option value="notbought">Nicht gekauft</option>
+            <option value="bought">Gekauft</option>
+        </select>
+    </form>
+</menu>
+<main>
+
+</main>
+<footer>© Stefan Temme 2026</footer>
+<template id="card_template">
+    <article class="card">
+
+        <header></header>
+        <picture>
+            <img src="" alt="productimage"/>
+        </picture>
+        <p></p>
+        <a href="" rel="external"></a>
+    </article>
+</template>
+<script>
+    const data =
+//startData
+        ``
+            //endData
+            .split("\n").filter(r => r.length).map(r => {
+            const [sort, url, description, image, comment, gekauft] = r.split(";");
+            return {
+                sort: Number.parseInt(sort),
+                url,
+                description,
+                image,
+                comment,
+                gekauft: gekauft.toLowerCase() === "true"
+            }
+        }).sort((a, b) => Math.sign(a.sort - b.sort));
+    const main = document.querySelector("main");
+    const template = document.querySelector("#card_template");
+    main.append(...data.map(({url, description, image, comment, gekauft}) => {
+        const node = template.content.cloneNode(true);
+        if (gekauft) {
+            node.querySelector("article").classList.add("bought");
+        }
+        const header = node.querySelector("header");
+        header.innerText = description;
+
+        const p = node.querySelector("p")
+        p.innerText = comment
+
+        let img = node.querySelector("img");
+        if (!image || image.length == 0) {
+            image = "noimg.svg";
+        }
+        img.src = "img/" + image;
+        const a = node.querySelector("a");
+        if (url) {
+            a.href = url;
+            a.innerText = url;
+        } else {
+        }
+        return node;
+    }));
+    const form = document.querySelector("#filter");
+    form.addEventListener("change", updateVisibilty)
+
+    function updateVisibilty() {
+        const data = form.querySelector("select").value;
+        main.querySelectorAll(".card").forEach(card => {
+            const selectors = {
+                all: ".card",
+                bought: ".card.bought",
+                notbought: ".card:not(.bought)"
+            }
+            card.classList.toggle("hidden", !card.matches(selectors[data]));
+        });
+    }
+</script>
+
+
+</body>
+</html>

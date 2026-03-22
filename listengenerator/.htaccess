@@ -1,0 +1,20 @@
+RewriteEngine On
+
+# listen/ direkt ausliefern (statische Dateien)
+RewriteCond %{REQUEST_URI} ^/listen/
+RewriteRule ^ - [L]
+
+# API-Endpunkte routen
+RewriteRule ^api/auth$                api/auth.php         [L,QSA]
+RewriteRule ^api/lists-config$        api/lists-config.php [L,QSA]
+RewriteRule ^api/lists/?$             api/lists.php        [L,QSA]
+RewriteRule ^api/lists/([^/]+)$ api/lists.php?name=$1 [L,QSA]
+RewriteRule ^api/meta$          api/meta.php    [L,QSA]
+RewriteRule ^api/images/([^/]+)$ api/images.php?name=$1 [L,QSA]
+RewriteRule ^api/deploy/([^/]+)$ api/deploy.php?name=$1 [L,QSA]
+
+# Alles andere → React SPA (public/index.html)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+
