@@ -18,10 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body     = json_decode(file_get_contents('php://input'), true);
 $password = trim($body['password'] ?? '');
+$list     = trim($body['list'] ?? '');
 
-if ($password === '') {
+if ($password === '' || $list === '') {
     http_response_code(400);
-    echo json_encode(['error' => 'password erforderlich']);
+    echo json_encode(['error' => 'password und list erforderlich']);
     exit();
 }
 
@@ -41,6 +42,7 @@ if (!password_verify($password, $hash)) {
 }
 
 $token = jwtEncode([
+    'list' => $list,
     'iat'  => time(),
     'exp'  => time() + 8 * 3600,
 ], $secret);
