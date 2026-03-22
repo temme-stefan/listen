@@ -19,12 +19,11 @@ fi
 cd "$SCRIPT_DIR"
 
 echo "🧹 Server aufräumen (listen/, lists.json und .env bleiben erhalten)..."
-ssh "$SERVER" "find $REMOTE -mindepth 1 \
-  -not -path '$REMOTE/listen' \
-  -not -path '$REMOTE/listen/*' \
-  -not -name '.env' \
-  -not -name 'lists.json' \
-  -delete 2>/dev/null; true"
+ssh "$SERVER" "cd $REMOTE && find . -mindepth 1 \
+  -path ./listen -prune -o \
+  -name .env -prune -o \
+  -name lists.json -prune -o \
+  -print -delete 2>/dev/null; true"
 
 echo "🚀 Deploye..."
 scp -r api/ lib/ template/ public/ index.php .htaccess router.php "$SERVER:$REMOTE/"
