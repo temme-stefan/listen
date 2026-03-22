@@ -18,10 +18,12 @@ fi
 
 cd "$SCRIPT_DIR"
 
-echo "🧹 Server aufräumen (listen/ und .env bleiben erhalten)..."
+echo "🧹 Server aufräumen (listen/, lists.json und .env bleiben erhalten)..."
 ssh "$SERVER" "find $REMOTE -mindepth 1 \
-  -not -path '$REMOTE/listen*' \
+  -not -path '$REMOTE/listen' \
+  -not -path '$REMOTE/listen/*' \
   -not -name '.env' \
+  -not -name 'lists.json' \
   -delete 2>/dev/null; true"
 
 echo "🚀 Deploye..."
