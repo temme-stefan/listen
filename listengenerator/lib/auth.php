@@ -12,7 +12,9 @@ function requireAuth(): array
 {
     $secret = env('JWT_SECRET');
 
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $header = $_SERVER['HTTP_AUTHORIZATION']
+           ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+           ?? '';
     if (!str_starts_with($header, 'Bearer ')) {
         http_response_code(401);
         echo json_encode(['error' => 'Kein Token angegeben']);

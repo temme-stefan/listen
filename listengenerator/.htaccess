@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Authorization-Header an PHP weiterleiten
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # listen/ direkt ausliefern (statische Dateien)
 RewriteCond %{REQUEST_URI} ^/listen/
 RewriteRule ^ - [L]
