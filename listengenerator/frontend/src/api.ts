@@ -55,11 +55,6 @@ export async function saveListsConfig(configs: ListConfig[]): Promise<void> {
   });
 }
 
-export async function fetchLists(): Promise<string[]> {
-  const res = await apiFetch('/api/lists');
-  return res.json();
-}
-
 export async function fetchList(name: string): Promise<Card[]> {
   const res = await apiFetch(`/api/lists/${name}`);
   return res.json();

@@ -15,11 +15,6 @@ $payload = requireAuth();
 $method = $_SERVER['REQUEST_METHOD'];
 $name   = $_GET['name'] ?? '';
 
-// GET /api/lists – alle Listennamen
-if ($method === 'GET' && $name === '') {
-    echo json_encode(csvListNames());
-    exit();
-}
 
 if ($name === '') {
     http_response_code(400);

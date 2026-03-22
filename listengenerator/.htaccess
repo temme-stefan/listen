@@ -1,4 +1,3 @@
-Options -MultiViews
 RewriteEngine On
 
 # Authorization-Header an PHP weiterleiten
@@ -12,8 +11,7 @@ RewriteRule ^ - [L]
 # API-Endpunkte routen
 RewriteRule ^api/auth$                api/auth.php         [L,QSA]
 RewriteRule ^api/lists-config$        api/lists-config.php [L,QSA]
-RewriteRule ^api/lists/?$             api/lists.php        [L,QSA]
-RewriteRule ^api/lists/([^/]+)$ api/lists.php?name=$1 [L,QSA]
+RewriteRule ^api/lists/([^/]+)$       api/lists.php?name=$1 [L,QSA]
 RewriteRule ^api/meta$          api/meta.php    [L,QSA]
 RewriteRule ^api/images/([^/]+)$ api/images.php?name=$1 [L,QSA]
 RewriteRule ^api/deploy/([^/]+)$ api/deploy.php?name=$1 [L,QSA]
