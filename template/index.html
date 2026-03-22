@@ -60,7 +60,9 @@
                 padding: 3rem;
             }
         }
-
+        .hidden{
+            display:none;
+        }
         .card {
             max-width: min(100dvw, 500px);
             display: grid;
@@ -144,6 +146,13 @@
 </head>
 <body>
 <header><h1>&#127873;%title&#127873;</h1></header>
+<form id="filter">
+    <select>
+        <option selected value="all">Alle</option>
+        <option value="notbought">Nicht gekauft</option>
+        <option value="bought">Gekauft</option>
+    </select>
+</form>
 <main>
 
 </main>
@@ -201,7 +210,22 @@
         }
         return node;
     }));
+    const form = document.querySelector("#filter");
+    form.addEventListener("change",updateVisibilty)
+    function updateVisibilty(){
+        const data = form.querySelector("select").value;
+        main.querySelectorAll(".card").forEach(card=>{
+            const selectors = {
+                all:".card",
+                bought:".card.bought",
+                notbought:".card:not(.bought)"
+            }
+            card.classList.toggle("hidden",!card.matches(selectors[data]));
+        });
+    }
 </script>
+
+
 
 </body>
 </html>
