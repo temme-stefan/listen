@@ -18,6 +18,7 @@
             display: grid;
             grid-template:
             "header" auto
+            "menu" auto
             "main" 1fr
             "footer" auto
             / 1fr;
@@ -32,6 +33,21 @@
             @media (min-width: 800px) {
                 padding-block-start: 3rem;
             }
+        }
+
+        menu {
+            display: flex;
+            justify-content: center;
+            padding-block: 0.5rem;
+            padding-inline: 0.5rem;
+        }
+
+        select {
+            background-color: #00000015;
+            border: 1px solid #00000075;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 5px 8px;
         }
 
         footer {
@@ -60,12 +76,15 @@
                 padding: 3rem;
             }
         }
-        .hidden{
-            display:none;
-        }
+
         .card {
             max-width: min(100dvw, 500px);
             display: grid;
+
+            &.hidden {
+                display: none;
+            }
+
             justify-items: center;
             border: 1px solid #00000075;
             background-color: #00000015;
@@ -112,7 +131,7 @@
                 /*border: 1px solid #00000035;*/
                 border-radius: 5px;
                 padding: 0.5rem;
-                width:100%;
+                width: 100%;
             }
 
             a {
@@ -123,19 +142,21 @@
                 text-overflow: ellipsis;
                 max-width: 80%;
             }
-            &.bought{
+
+            &.bought {
                 border-color: darkgreen;
                 position: relative;
-                &:after{
+
+                &:after {
                     position: absolute;
-                    top:0;
-                    bottom:0;
-                    left:0;
-                    right:0;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
                     background-color: #00800050;
                     pointer-events: none;
-                    content:"✅";
-                    font-size:4rem;
+                    content: "✅";
+                    font-size: 4rem;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -146,13 +167,15 @@
 </head>
 <body>
 <header><h1>&#127873;%title&#127873;</h1></header>
-<form id="filter">
-    <select>
-        <option selected value="all">Alle</option>
-        <option value="notbought">Nicht gekauft</option>
-        <option value="bought">Gekauft</option>
-    </select>
-</form>
+<menu>
+    <form id="filter">
+        <select>
+            <option selected value="all">Alle</option>
+            <option value="notbought">Nicht gekauft</option>
+            <option value="bought">Gekauft</option>
+        </select>
+    </form>
+</menu>
 <main>
 
 </main>
@@ -171,9 +194,9 @@
 <script>
     const data =
 //startData
-``
-//endData
-        .split("\n").filter(r=>r.length).map(r => {
+        ``
+            //endData
+            .split("\n").filter(r => r.length).map(r => {
             const [sort, url, description, image, comment, gekauft] = r.split(";");
             return {
                 sort: Number.parseInt(sort),
@@ -198,7 +221,7 @@
         p.innerText = comment
 
         let img = node.querySelector("img");
-        if (!image || image.length==0) {
+        if (!image || image.length == 0) {
             image = "noimg.svg";
         }
         img.src = "img/" + image;
@@ -211,20 +234,20 @@
         return node;
     }));
     const form = document.querySelector("#filter");
-    form.addEventListener("change",updateVisibilty)
-    function updateVisibilty(){
+    form.addEventListener("change", updateVisibilty)
+
+    function updateVisibilty() {
         const data = form.querySelector("select").value;
-        main.querySelectorAll(".card").forEach(card=>{
+        main.querySelectorAll(".card").forEach(card => {
             const selectors = {
-                all:".card",
-                bought:".card.bought",
-                notbought:".card:not(.bought)"
+                all: ".card",
+                bought: ".card.bought",
+                notbought: ".card:not(.bought)"
             }
-            card.classList.toggle("hidden",!card.matches(selectors[data]));
+            card.classList.toggle("hidden", !card.matches(selectors[data]));
         });
     }
 </script>
-
 
 
 </body>
