@@ -13,8 +13,13 @@ header('Content-Type: application/json; charset=utf-8');
 $payload = requireAuth();
 
 $method = $_SERVER['REQUEST_METHOD'];
-$name   = $_GET['name'] ?? '';
 
+// Name aus URI parsen: /api/lists/artur → artur
+$uri  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$name = '';
+if (preg_match('#^/api/lists/([^/]+)$#', $uri, $m)) {
+    $name = $m[1];
+}
 
 if ($name === '') {
     http_response_code(400);

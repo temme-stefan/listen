@@ -18,7 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$name = $_GET['name'] ?? '';
+// Name aus URI parsen: /api/images/artur → artur
+$uri  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$name = '';
+if (preg_match('#^/api/images/([^/]+)$#', $uri, $m)) {
+    $name = $m[1];
+}
 if ($name === '') {
     http_response_code(400);
     echo json_encode(['error' => 'Listenname fehlt']);
