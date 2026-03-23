@@ -67,7 +67,7 @@ export default function CardComponent({ card, index, listName, total, onChange, 
 
   const imgSrc = card.image
     ? `/listen/${listName}/img/${card.image}`
-    : '/noimg.svg';
+    : '/public/noimg.svg';
 
   return (
     <article className={`card${card.bought ? ' bought' : ''}`}>
