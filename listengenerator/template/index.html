@@ -143,7 +143,7 @@
                 max-width: 80%;
             }
 
-            &.bought {
+            &.bought:not(.hideBought) {
                 border-color: darkgreen;
                 position: relative;
 
@@ -174,6 +174,10 @@
             <option value="notbought">Nicht gekauft</option>
             <option value="bought">Gekauft</option>
         </select>
+        <label>
+            Gekauft verbergen
+            <input type="checkbox" id="hideBuyInfo"/>
+        </label>
     </form>
 </menu>
 <main>
@@ -235,16 +239,17 @@
     }));
     const form = document.querySelector("#filter");
     form.addEventListener("change", updateVisibilty)
-
+    const selectors = {
+        all: ".card",
+        bought: ".card.bought",
+        notbought: ".card:not(.bought)"
+    }
     function updateVisibilty() {
-        const data = form.querySelector("select").value;
+        const visibleValue = form.querySelector("select").value;
+        const hideBuyInfo = form.querySelector("#hideBuyInfo").checked;
         main.querySelectorAll(".card").forEach(card => {
-            const selectors = {
-                all: ".card",
-                bought: ".card.bought",
-                notbought: ".card:not(.bought)"
-            }
-            card.classList.toggle("hidden", !card.matches(selectors[data]));
+            card.classList.toggle("hideBought",hideBuyInfo);
+            card.classList.toggle("hidden", !card.matches(selectors[visibleValue]));
         });
     }
 </script>
