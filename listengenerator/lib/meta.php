@@ -83,18 +83,58 @@ function fetchMetaMicrolink(string $url): array
     curl_close($ch);
 
     if ($response === false) throw new RuntimeException("microlink cURL-Fehler: $error");
-    if ($httpCode < 200 || $httpCode >= 400) {
-        throw new RuntimeException("microlink HTTP $httpCode");
-    }
 
     $data = json_decode($response, true);
     if (!isset($data['data'])) {
         throw new RuntimeException('microlink: Ungültige Antwort');
     }
 
+    // Bei Fehler (z.B. Cloudflare Block): Fallback zu OpenGraph.io
+    if (isset($data['statusCode']) && $data['statusCode'] >= 400) {
+        return fetchMetaOpenGraph($url);
+    }
+
     return [
         'title' => $data['data']['title'] ?? '',
         'image' => $data['data']['image']['url'] ?? '',
+    ];
+}
+
+function fetchMetaOpenGraph(string $url): array
+{
+    $apiKey = getenv('OPENGRAPH_IO_KEY');
+    if (!$apiKey) {
+        return ['title' => '', 'image' => ''];
+    }
+
+    $apiUrl = 'https://opengraph.io/api/1.1/site/' . urlencode($url) . '?app_id=' . urlencode($apiKey);
+
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $apiUrl,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_USERAGENT => 'listengenerator/1.0',
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response === false || $httpCode >= 400) {
+        return ['title' => '', 'image' => ''];
+    }
+
+    $data = json_decode($response, true);
+    if (!isset($data['openGraph'])) {
+        return ['title' => '', 'image' => ''];
+    }
+
+    return [
+        'title' => $data['openGraph']['title'] ?? '',
+        'image' => $data['openGraph']['image'] ?? '',
     ];
 }
 
