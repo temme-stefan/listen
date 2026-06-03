@@ -10,18 +10,7 @@ function fetchMeta(string $url): array
 {
     // SSRF-Schutz
     assertNotSsrf($url);
-
-    try {
-        $result = fetchMetaDirect($url);
-        // Leeres Ergebnis (Bot-Protection hat durchgelassen aber kein OG geliefert) → Fallback
-        if ($result['title'] === '' && $result['image'] === '') {
-            throw new RuntimeException('Keine Metadaten im HTML gefunden');
-        }
-        return $result;
-    } catch (RuntimeException $e) {
-        // Fallback: microlink.io (50 kostenlose Requests/Tag)
-        return fetchMetaMicrolink($url);
-    }
+    return fetchMetaMicrolink($url);
 }
 
 function fetchMetaDirect(string $url): array
@@ -30,19 +19,19 @@ function fetchMetaDirect(string $url): array
 
     $ch = curl_init();
     curl_setopt_array($ch, [
-        CURLOPT_URL            => $url,
+        CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS      => 5,
-        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_TIMEOUT => 15,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_AUTOREFERER    => true,
-        CURLOPT_COOKIEJAR      => $cookieFile,
-        CURLOPT_COOKIEFILE     => $cookieFile,
-        CURLOPT_USERAGENT      => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        CURLOPT_HTTPHEADER     => [
+        CURLOPT_AUTOREFERER => true,
+        CURLOPT_COOKIEJAR => $cookieFile,
+        CURLOPT_COOKIEFILE => $cookieFile,
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        CURLOPT_HTTPHEADER => [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7',
             'Accept-Encoding: gzip, deflate',
@@ -55,12 +44,12 @@ function fetchMetaDirect(string $url): array
             'Sec-Fetch-User: ?1',
             'Cache-Control: max-age=0',
         ],
-        CURLOPT_ENCODING       => 'gzip, deflate',
+        CURLOPT_ENCODING => 'gzip, deflate',
     ]);
 
-    $html     = curl_exec($ch);
+    $html = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error    = curl_error($ch);
+    $error = curl_error($ch);
     curl_close($ch);
 
     @unlink($cookieFile);
@@ -79,18 +68,18 @@ function fetchMetaMicrolink(string $url): array
 
     $ch = curl_init();
     curl_setopt_array($ch, [
-        CURLOPT_URL            => $apiUrl,
+        CURLOPT_URL => $apiUrl,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_TIMEOUT => 15,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_USERAGENT      => 'listengenerator/1.0',
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+        CURLOPT_USERAGENT => 'listengenerator/1.0',
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error    = curl_error($ch);
+    $error = curl_error($ch);
     curl_close($ch);
 
     if ($response === false) throw new RuntimeException("microlink cURL-Fehler: $error");
@@ -126,7 +115,7 @@ function parseMetadata(string $html): array
     // <meta> Tags
     foreach ($dom->getElementsByTagName('meta') as $tag) {
         $property = $tag->getAttribute('property');
-        $content  = $tag->getAttribute('content');
+        $content = $tag->getAttribute('content');
 
         if ($property === 'og:title' && $content !== '') $title = $content;
         if ($property === 'og:image' && $content !== '') $image = $content;
