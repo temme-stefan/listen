@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-SERVER="u106909590@access895651998.webspace-data.io"
+SERVER="listen.teamtemme.de"
 REMOTE="~/phpSites/listengenerator"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

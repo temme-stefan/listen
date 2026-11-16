@@ -46,7 +46,7 @@ Node.js steht auf dem Server nicht zur Verfügung. PHP ist die natürliche Wahl:
 | Lernkurve | ✅ Code aus `opengraph/` direkt wiederverwendbar | — |
 | Deploy-Integration | ✅ Build-Logik direkt in PHP (`str_replace` ins Template) | — |
 
-**Begründung**: PHP ist auf dem Shared-Webspace (`access895651998.webspace-data.io`) bereits aktiv – das Deploy-Ziel ist ein klassischer Webspace (Ionos). Ein PHP-Skript wird einfach per `scp`/`git push` hochgeladen und läuft sofort, ohne Prozess-Management. Der OpenGraph-Scraping-Code aus `proxy.php` und `imageProxy.php` kann direkt wiederverwendet werden. Eingesetzt wird **PHP 8.3** (Latest).
+**Begründung**: PHP ist auf dem Shared-Webspace bereits aktiv – das Deploy-Ziel ist ein klassischer Webspace (Ionos). Ein PHP-Skript wird einfach per `scp`/`git push` hochgeladen und läuft sofort, ohne Prozess-Management. Der OpenGraph-Scraping-Code aus `proxy.php` und `imageProxy.php` kann direkt wiederverwendet werden. Eingesetzt wird **PHP 8.3** (Latest).
 
 > **Hinweis zum lokalen Entwickeln**: Das bestehende `opengraph/`-Tool bleibt erhalten und kann weiterhin mit `php -S localhost:8088` lokal genutzt werden.
 
